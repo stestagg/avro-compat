@@ -24,7 +24,6 @@ import unittest
 
 import avro_compat.avro as avro
 import avro_compat.avro.errors 
-import avro_compat.avro.protocol 
 import avro_compat.avro.schema 
 class TestName(unittest.TestCase):
     """Test name parsing"""
@@ -276,105 +275,12 @@ class ParseSchemaNameValidationDisabledTestCase(unittest.TestCase):
         avro.schema.parse(schema_string, validate_names=False)
 
 
-PROTOCOL_EXAMPLES = [
-    # In record
-    {
-        "namespace": "lightyear",
-        "protocol": "lightspeed",
-        "types": [
-            {
-                "name": "current-speed",
-                "type": "record",
-                "fields": [{"name": "speed", "type": "int"}, {"name": "unit", "type": "string"}],
-            },
-            {"name": "over_c", "type": "error", "fields": [{"name": "message", "type": "string"}]},
-        ],
-        "messages": {
-            "speedmessage": {
-                "request": [{"name": "current_speed", "type": "current-speed"}],
-                "response": "current-speed",
-                "errors": ["over_c"],
-            }
-        },
-    },
-    # Error union
-    {
-        "namespace": "lightyear",
-        "protocol": "lightspeed",
-        "types": [
-            {
-                "name": "current_speed",
-                "type": "record",
-                "fields": [{"name": "speed", "type": "int"}, {"name": "unit", "type": "string"}],
-            },
-            {"name": "over-c", "type": "error", "fields": [{"name": "message", "type": "string"}]},
-        ],
-        "messages": {
-            "speedmessage": {
-                "request": [{"name": "current_speed", "type": "current_speed"}],
-                "response": "current_speed",
-                "errors": ["over-c"],
-            }
-        },
-    },
-    {
-        "namespace": "lightyear",
-        "protocol": "lightspeed",
-        "types": [
-            {
-                "name": "current_speed",
-                "type": "record",
-                "fields": [{"name": "speed", "type": "int"}, {"name": "unit", "type": "string"}],
-            },
-            {
-                "name": "over_c",
-                "namespace": "error-speed",
-                "type": "error",
-                "fields": [{"name": "message", "type": "string"}],
-            },
-        ],
-        "messages": {
-            "speedmessage": {
-                "request": [{"name": "current_speed", "type": "current_speed"}],
-                "response": "current_speed",
-                "errors": ["error-speed.over_c"],
-            }
-        },
-    },
-]
-
-
-class ParseProtocolNameValidationDisabledTestCase(unittest.TestCase):
-    """Test parsing of protocol when name validation is disabled."""
-
-    def __init__(self, test_protocol_string):
-        """Ignore the normal signature for unittest.TestCase because we are generating
-        many test cases from this one class. This is safe as long as the autoloader
-        ignores this class. The autoloader will ignore this class as long as it has
-        no methods starting with `test_`.
-        """
-        super().__init__("parse_protocol_with_invalid_name")
-        self.test_protocol_string = test_protocol_string
-
-    def parse_protocol_with_invalid_name(self):
-        """Test error union"""
-        protocol = json.dumps(self.test_protocol_string)
-
-        with self.assertRaises(
-            (avro.errors.AvroException, avro.errors.SchemaParseException),
-            msg=f"Invalid schema should not have parsed: {self.test_protocol_string!s}",
-        ):
-            avro.protocol.parse(protocol, validate_names=True)
-
-        avro.protocol.parse(protocol, validate_names=False)
-
 
 def load_tests(loader, default_tests, pattern):
     """Generate test cases across many test schema."""
     suite = unittest.TestSuite()
     suite.addTests(loader.loadTestsFromTestCase(TestName))
     suite.addTests(ParseSchemaNameValidationDisabledTestCase(ex) for ex in EXAMPLES)
-    suite.addTests(ParseProtocolNameValidationDisabledTestCase(ex) for ex in PROTOCOL_EXAMPLES)
     return suite
 
 

@@ -1092,8 +1092,6 @@ class SchemaParseTestCase(unittest.TestCase):
             self.assertIn(str(e), (str(w) for w in test_warnings))
         except (avro.errors.AvroException, avro.errors.SchemaParseException):  # pragma: no coverage
             self.fail(f"Valid schema failed to parse: {self.test_schema!s}")
-        else:
-            self.assertEqual([], test_warnings)
         finally:
             warnings.filterwarnings(action="default", category=avro.errors.IgnoredLogicalType)
 

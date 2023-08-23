@@ -94,7 +94,7 @@ class TestCat(unittest.TestCase):
             os.unlink(self.avro_file)
 
     def _run(self, *args, **kw):
-        out = subprocess.check_output([sys.executable, "-m", "avro", "cat", self.avro_file] + list(args)).decode()
+        out = subprocess.check_output([sys.executable, "-m", "avro_compat.avro", "cat", self.avro_file] + list(args)).decode()
         return out if kw.get("raw") else out.splitlines()
 
     def test_print(self):
@@ -132,8 +132,7 @@ class TestCat(unittest.TestCase):
         self.assertEqual(out.strip(), _JSON_PRETTY.strip())
 
     def test_version(self):
-        subprocess.check_output([sys.executable, "-m", "avro", "cat", "--version"])
-
+        subprocess.check_output([sys.executable, "-m", "avro_compat.avro", "cat", "--version"]) 
     def test_files(self):
         out = self._run(self.avro_file)
         self.assertEqual(len(out), 2 * NUM_RECORDS)
@@ -182,16 +181,15 @@ class TestWrite(unittest.TestCase):
                 continue
 
     def _run(self, *args, **kw):
-        args = [sys.executable, "-m", "avro", "write", "--schema", self.schema_file] + list(args)
+        args = [sys.executable, "-m", "avro_compat.avro", "write", "--schema", self.schema_file] + list(args) 
         subprocess.check_call(args, **kw)
 
     def load_avro(self, filename):
-        out = subprocess.check_output([sys.executable, "-m", "avro", "cat", filename]).decode()
+        out = subprocess.check_output([sys.executable, "-m", "avro_compat.avro", "cat", filename]).decode() 
         return [json.loads(o) for o in out.splitlines()]
 
     def test_version(self):
-        subprocess.check_call([sys.executable, "-m", "avro", "write", "--version"])
-
+        subprocess.check_call([sys.executable, "-m", "avro_compat.avro", "write", "--version"]) 
     def format_check(self, format, filename):
         tmp = _tempfile()
         try:

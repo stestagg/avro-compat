@@ -1,25 +1,51 @@
 from typing import Any
 import cavro
 import json
+from pathlib import Path
 
+from avro_compat.avro import OPTIONS
 import avro_compat.avro.constants
+from avro_compat.avro.errors import SchemaParseException
 
+from avro.name import Names
+
+
+def instantiate_type(cls, validate_names=True, **kwargs):
+    if isinstance(cls.TYPE, tuple):
+        raise NotImplementedError("Multiple types not supported")
+    source = {
+        'type': cls.TYPE.type_name,
+        **kwargs
+    }
+    schema = parse(source, validate_names=validate_names)
+    return schema.type
 
 
 class AvroTypeMeta(type):
+
+    def __new__(cls, name, bases, classdict):
+        result = type.__new__(cls, name, bases, dict(classdict))
+        result.__new__ = instantiate_type
+        return result
+
     def __instancecheck__(cls, inst) -> bool:
         if not isinstance(inst, (cavro.Schema, cavro.LogicalType)):
             return False
         if not isinstance(inst.type, cls.TYPE):
             return False
         if logical_type := getattr(cls, 'LOGICAL_TYPE', None):
-            if not isinstance(inst.type.logical_type, logical_type):
+            if not any (isinstance(a, logical_type) for a in inst.type.value_adapters):
                 return False
         return True
 
 
 class DecimalLogicalSchema(metaclass=AvroTypeMeta):
     TYPE = (cavro.BytesType, cavro.FixedType)
+    LOGICAL_TYPE = cavro.DecimalType
+
+
+class FixedDecimalSchema(metaclass=AvroTypeMeta):
+    TYPE = cavro.FixedType
     LOGICAL_TYPE = cavro.DecimalType
 
 
@@ -89,25 +115,82 @@ class Schema(cavro.Schema):
     def __getattr__(self, name):
         return getattr(self.type, name)
 
+    def __str__(self):
+        return self.schema_str
+    
+    def __eq__(self, other):
+        if isinstance(other, Schema):
+            return self.canonical_form == other.canonical_form
+        return False
+    
+    def __hash__(self) -> int:
+        return hash(self.fingerprint())
+
     @property
     def logicalType(self):
-        return self.type.logical_type.logical_name
+        for adapter in self.type.value_adapters:
+            if hasattr(adapter, 'logical_name'):
+                return adapter.logical_name
+        raise AttributeError("Logical type not found")
 
     def get_prop(self, prop):
-        if self.type.logical_type is not None:
+        for adapter in self.type.value_adapters:
             try:
-                return getattr(self.type.logical_type, prop)
+                return getattr(adapter, prop)
             except AttributeError:
                 pass
         return getattr(self, prop)
+    
+    def to_json(self):
+        return self.schema
+    
+    @property
+    def other_props(self):
+        return self.metadata
+
+class _NullNameType:
+    type = None
+    name = None
+    effective_namespace = None
+
+class Name:
+    def __init__(self, name_attr=None, space_attr=None, default_space=None, validate_name=True):
+        schema = parse('"null"', validate_names=validate_name)
+        if name_attr is None:
+            self._type = _NullNameType
+        else:
+            self._type = cavro.NamedType(schema, {'name': name_attr, 'namespace': space_attr}, default_space)
+
+    def __eq__(self, other):
+        if not isinstance(other, Name):
+            return False
+        return self._type.type == other._type.type
+
+    @property
+    def fullname(self):
+        return self._type.type
+
+    @property
+    def name(self):
+        return self._type.name
+    
+    @property
+    def space(self):
+        return self._type.effective_namespace
         
 
-
 def parse(json_string: str, validate_enum_symbols: bool = True, validate_names: bool = True) -> Schema:
-    options = cavro.Options(
-        enum_symbols_must_be_unique=validate_enum_symbols,
-        enforce_enum_symbol_name_rules=validate_enum_symbols,
-        types_str_to_schema=True,
-        fingerprint_returns_digest=True,
-    )
-    return Schema(json_string, options=options)
+    try:
+        return Schema(json_string, options=OPTIONS.replace(
+            enum_symbols_must_be_unique=validate_enum_symbols,
+            enforce_enum_symbol_name_rules=validate_enum_symbols,
+            enforce_type_name_rules=validate_names,
+            enforce_namespace_name_rules=validate_names,
+        ))
+    except (ValueError, TypeError, KeyError) as e:
+        raise SchemaParseException(str(e)) from e
+
+
+def from_path(path, **kwargs) -> Schema:
+    path = Path(path)
+    return parse(path.read_text(), **kwargs)

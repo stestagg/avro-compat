@@ -1,17 +1,17 @@
-class AvroException(Exception):
-    pass
+import cavro 
 
+AvroException = cavro.CavroException
 
 class InvalidAvroBinaryEncoding(AvroException):
     pass
 
 
-class SchemaParseException(AvroException):
-    pass
+SchemaParseException = AvroException
+# class SchemaParseException(AvroException):
+#     pass
 
 
-class InvalidName(SchemaParseException):
-    pass
+InvalidName = cavro.InvalidName
 
 
 class InvalidDefault(SchemaParseException):
@@ -75,5 +75,4 @@ class AvroRuntimeException(RuntimeError, AvroException):
     pass
 
 
-class UnknownFingerprintAlgorithmException(AvroException):
-    pass
+UnknownFingerprintAlgorithmException = cavro.InvalidHasher

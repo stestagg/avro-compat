@@ -6,7 +6,7 @@ import re
 
 HERE = Path(__file__).parent
 
-SRC_DIR = HERE / "lib-tests"
+SRC_DIR = HERE / "vendor-tests"
 DEST_DIR = HERE / "tests" / "lib-tests"
 
 # This is kinda ugly!
@@ -31,6 +31,13 @@ def switch_import(match):
     raise NotImplementedError(stmt)
 
 
+def substitute_line(match):
+    line_content = match.group(1)
+    pattern = match.group(2)
+    replacement = match.group(3)
+    return line_content.replace(pattern, replacement)
+
+
 @click.command()
 def sync_tests():
     print("Syncing tests")
@@ -45,6 +52,7 @@ def sync_tests():
 
         src_text = test_file.read_text()
         modified_text = re.sub(r"^(.*)\s+#\s*switch-compat\s*$", switch_import, src_text, flags=re.M)
+        modified_text = re.sub(r'^(.*)\s+# s/(.*?)/(.*?)/\s*$', substitute_line, modified_text, flags=re.M)
         dest_file.write_text(modified_text)
 
 

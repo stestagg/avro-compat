@@ -22,12 +22,12 @@ import unittest
 from pathlib import Path
 from typing import Optional, cast
 
-import avro_compat.avro  as avro 
-import avro_compat.avro 
-import avro_compat.avro as avro
-import avro_compat.avro.datafile 
-import avro_compat.avro.io 
-_INTEROP_DATA_DIR = Path(avro.__file__).parent / "test" / "interop" / "data"
+import avro as _real_avro
+import avro  # switch-compat
+import avro.datafile  # switch-compat
+import avro.io  # switch-compat
+
+_INTEROP_DATA_DIR = Path(_real_avro.__file__).parent / "test" / "interop" / "data"
 
 
 @unittest.skipUnless(os.path.exists(_INTEROP_DATA_DIR), f"{_INTEROP_DATA_DIR} does not exist")
