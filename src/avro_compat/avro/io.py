@@ -1,6 +1,7 @@
 import cavro
 from avro_compat import avro
 import avro_compat.avro.errors
+from avro_compat.avro.errors import SchemaResolutionException, AvroTypeException
 import avro_compat.avro.schema  # Needed to replicate avro lib
 from avro_compat.avro import OPTIONS
 
@@ -69,6 +70,11 @@ class DatumReader:
         return self.read_data(self.writers_schema, self.readers_schema, decoder)
 
     def read_data(self, writers_schema: cavro.Schema, readers_schema: cavro.Schema, decoder: "BinaryDecoder") -> object:
+        if isinstance(writers_schema, cavro.AvroType):
+            writers_schema = cavro.Schema.wrap_type(writers_schema, OPTIONS)
+        if isinstance(readers_schema, cavro.AvroType):
+            readers_schema = cavro.Schema.wrap_type(readers_schema, OPTIONS)
+            
         reader = self._reader_for_writer(readers_schema, writers_schema)
         try:
             return reader.binary_read(decoder.cavro_reader)
@@ -90,6 +96,8 @@ class DatumWriter:
         self.write_data(self.writers_schema, datum, encoder)
 
     def write_data(self, writers_schema: cavro.Schema, datum: object, encoder: BinaryEncoder) -> None:
+        if isinstance(writers_schema, cavro.AvroType):
+            writers_schema = cavro.Schema.wrap_type(writers_schema, OPTIONS)
         try:
             writers_schema.binary_write(encoder.cavro_writer, datum)
         except cavro.ExponentTooLarge as e:
@@ -110,3 +118,6 @@ def validate(expected_schema: avro_compat.avro.schema.Schema, datum: object, rai
             )
         return False
     return True
+
+def Validate(*a, **kw):
+    return validate(*a, **kw)

@@ -1,18 +1,36 @@
+from packaging import version as _version
+import warnings
 from typing import Any
 import cavro
 import json
 from pathlib import Path
+from inspect import signature
 
-from avro_compat.avro import OPTIONS
+from avro_compat.avro import avro_version, OPTIONS
 import avro_compat.avro.constants
 from avro_compat.avro.errors import SchemaParseException
 
-from avro.name import Names
+import avro.schema
+
+try:
+    from avro_compat.avro.constants import PRIMITIVE_TYPES
+except ImportError:
+    from avro.schema import PRIMITIVE_TYPES
+
+if avro_version >= _version.parse('1.11.0'):
+    from avro.name import Names
+else:
+    from avro.schema import Names
 
 
-def instantiate_type(cls, validate_names=True, **kwargs):
+def instantiate_type(cls, *args, validate_names=True, **kwargs):
     if isinstance(cls.TYPE, tuple):
         raise NotImplementedError("Multiple types not supported")
+    
+    if args:
+        init_sig = signature(getattr(avro.schema, cls.__name__).__init__)
+        kwargs = init_sig.bind(None, *args, **kwargs).arguments
+
     source = {
         'type': cls.TYPE.type_name,
         **kwargs
@@ -147,11 +165,19 @@ class Schema(cavro.Schema):
     @property
     def other_props(self):
         return self.metadata
+    
+    @property
+    def schemas(self):
+        if isinstance(self.type, cavro.UnionType):
+            return self.type.union_types
+        raise AttributeError("schemas")
+
 
 class _NullNameType:
     type = None
     name = None
     effective_namespace = None
+
 
 class Name:
     def __init__(self, name_attr=None, space_attr=None, default_space=None, validate_name=True):
@@ -190,6 +216,10 @@ def parse(json_string: str, validate_enum_symbols: bool = True, validate_names: 
     except (ValueError, TypeError, KeyError) as e:
         raise SchemaParseException(str(e)) from e
 
+
+def Parse(*a, **kw):
+    warnings.warn("`Parse` is deprecated, use `parse` instead", DeprecationWarning)
+    return parse(*a, **kw)
 
 def from_path(path, **kwargs) -> Schema:
     path = Path(path)

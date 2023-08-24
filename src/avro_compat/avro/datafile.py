@@ -9,6 +9,12 @@ from io import TextIOBase
 
 
 NULL_CODEC = "null"
+DEFLATE_CODEC = 'deflate'
+BZIP2_CODEC = 'bzip2'
+SNAPPY_CODEC = 'snappy'
+XZ_CODEC = 'xz'
+ZSTANDARD_CODEC = 'zstandard'
+
 VALID_CODECS = frozenset(KNOWN_CODECS.keys())
 VALID_ENCODINGS = ['binary']
 CODEC_KEY = 'avro.codec'
@@ -17,10 +23,13 @@ SCHEMA_KEY = 'avro.schema'
 
 class DataFileWriter:
 
-    def __init__(self, writer: IO[AnyStr], datum_writer: Any, writers_schema: Optional[Schema] = None, codec: str = 'null'):
+    def __init__(self, writer: IO[AnyStr], datum_writer: Any, writers_schema: Optional[Schema] = None, codec: str = 'null', writer_schema=None):
         self.writer = writer
         write_header = True
         marker = None
+
+        if writers_schema is None:
+            writers_schema = writer_schema
         
         # Trash the python io model to get a non-text writer if we're given one
         if isinstance(writer, TextIOBase) and hasattr(writer, 'buffer'):
@@ -65,7 +74,11 @@ class DataFileWriter:
 
     def set_meta(self, key, value):
         assert self.container.blocks_written == 0, "Can't set metadata after writing data"
+        if isinstance(value, str):
+            value = value.encode()
         self.container.metadata[key] = value
+
+    SetMeta = set_meta
 
 
 class DataFileReader:
@@ -83,6 +96,8 @@ class DataFileReader:
     
     def get_meta(self, key):
         return self.container.metadata[key]
+    
+    GetMeta = get_meta
     
     def __iter__(self):
         return self
