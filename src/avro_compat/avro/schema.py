@@ -205,7 +205,7 @@ class Name:
         return self._type.effective_namespace
         
 
-def parse(json_string: str, validate_enum_symbols: bool = True, validate_names: bool = True) -> Schema:
+def parse(json_string: str, validate_enum_symbols: bool = True, validate_names: bool = True, return_record_name=False, return_record_name_override=False, handle_unicode_errors='strict', return_named_type=False, return_named_type_override=False) -> Schema:
     try:
         return Schema(json_string, options=OPTIONS.replace(
             enum_symbols_must_be_unique=validate_enum_symbols,

@@ -1,7 +1,7 @@
 import hashlib
 from cavro import Rabin
 
-def Fingerprint(parsing_normal_form_schema, fingerprint_algorithm_name):
+def Fingerprint(parsing_normal_form_schema, fingerprint_algorithm_name, _hex=False):
     if fingerprint_algorithm_name in ('rabin', 'CRC-64-AVRO'):
         hasher = Rabin()
     else:
@@ -13,7 +13,10 @@ def Fingerprint(parsing_normal_form_schema, fingerprint_algorithm_name):
             except ValueError:
                 raise e1
     hasher.update(parsing_normal_form_schema.encode())
-    return hasher.digest()
+    if _hex:
+        return hasher.hexdigest()
+    else:
+        return hasher.digest()
 
 
 def FingerprintAlgorithmNames():

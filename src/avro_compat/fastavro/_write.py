@@ -1,0 +1,2 @@
+
+CYTHON_MODULE = True

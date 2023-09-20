@@ -12,12 +12,11 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: BSD License",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
 ]
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dynamic = ["version"]
 
 dependencies = [
@@ -81,17 +80,15 @@ pythonPlatform = "Linux"
 executionEnvironments = [{ root = "src" }]
 
 [tool.pytest.ini_options]
-#addopts = "--cov-report xml:coverage.xml --cov src --cov-fail-under 0 --cov-append -m 'not integration'"
 addopts = "--continue-on-collection-errors"
 pythonpath = ["src"]
 testpaths = "tests"
-junit_family = "xunit2"
 markers = [
     "integration: marks as integration test",
-    "notebooks: marks as notebook test",
     "slow: marks tests as slow",
     "unit: fast offline tests",
 ]
+
 
 [tool.pylint]
 extension-pkg-whitelist = [

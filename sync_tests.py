@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from packaging import version
+import fastavro
 import avro
 from io import BytesIO
 from collections import defaultdict
@@ -25,6 +26,10 @@ AVRO_SKIP = {
     'test_tether_word_count.py',
 }
 
+FASTAVRO_SKIP = {
+    'test_appendable.py'
+}
+
 # This is kinda ugly!
 HAVE_IMPORT_HEADERS = defaultdict(bool)
 
@@ -45,27 +50,25 @@ def substitute_line(match):
 
 
 def rewrite_file(src_text):
-    modified_text = src_text.replace('import fastavro', 'import avro_compat.fastavro as fastavro')
-    modified_text = modified_text.replace('from fastavro', 'from avro_compat.fastavro')
-    if 'import avro' in modified_text:
-        pos = modified_text.find('import avro')
-        modified_text = modified_text.replace('import avro', 'import avro_compat.avro')
-        modified_text = modified_text[:pos] + 'import avro_compat.avro as avro\n' + modified_text[pos:]
-    modified_text = modified_text.replace('from avro', 'from avro_compat.avro')
+    if 'import avro' in src_text:
+        pos = src_text.find('import avro')
+        src_text = src_text.replace('import avro', 'import avro_compat.avro')
+        src_text = src_text[:pos] + 'import avro_compat.avro as avro\n' + src_text[pos:]
+    src_text = src_text.replace('from avro', 'from avro_compat.avro')
+
+    src_text = src_text.replace('import fastavro', 'import avro_compat.fastavro as fastavro')
+    src_text = src_text.replace('from fastavro', 'from avro_compat.fastavro')
     
     # Disable some tests
     # Protocol name tests
-    modified_text = modified_text.replace('suite.addTests(ParseProtocolNameValidationDisabledTestCase', '# DISABLED (')
+    src_text = src_text.replace('suite.addTests(ParseProtocolNameValidationDisabledTestCase', '# DISABLED (')
     # Disable warnings test
-    modified_text = modified_text.replace('self.assertEqual([], test_warnings)', 'pass # warning check disabled')
+    src_text = src_text.replace('self.assertEqual([], test_warnings)', 'pass # warning check disabled')
 
-    return modified_text
+    return src_text
 
 
-@click.command()
-def sync_tests():
-    print("Syncing tests")
-
+def sync_avro():
     avro_version = avro.__version__
     print('Avro:', avro_version)
 
@@ -101,15 +104,44 @@ def sync_tests():
                 dest_path.write_text(content)
 
 
-    test_files = list(SRC_DIR.glob("**/test_*.py"))
-    for test_file in test_files:
-        print(f"Syncing {test_file}")
-        HAVE_IMPORT_HEADERS.clear()
-        test_rel = test_file.relative_to(SRC_DIR)
+def sync_fastavro():
+    fastavro_version = fastavro.__version__
+    print('Fastavro:', fastavro_version)
 
-        dest_file = DEST_DIR / test_rel
-        dest_file.parent.mkdir(parents=True, exist_ok=True)
+    resp = requests.get(f'https://github.com/fastavro/fastavro/archive/refs/tags/{fastavro_version}.zip')
+    if resp.status_code != 200:
+        print(f"Unable to download fastavro tests: {resp.status_code} Trying master")
+        resp = requests.get('https://codeload.github.com/fastavro/fastavro/zip/refs/heads/master')
+        resp.raise_for_status()
+    
+    buf = BytesIO(resp.content)
+    with zipfile.ZipFile(buf, 'r') as zip_file:
+        for info in zip_file.infolist():
+            if info.is_dir():
+                continue
+            rel_name = info.filename.split('/', 1)[-1]
+            if not rel_name.startswith('tests/'):
+                continue
+            rel_name = rel_name.removeprefix('tests/').lstrip('/')
+            file_name = rel_name.rsplit('/', 1)[-1]
+            if file_name in FASTAVRO_SKIP:
+                continue
+            dest_path = DEST_DIR / 'fastavro_tests' / rel_name
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            content = zip_file.read(info)
+            if file_name.endswith('.py'):
+                content = content.decode('utf-8')
+                content = rewrite_file(content)
+                content = content.encode()
+            print(f"Syncing {dest_path}")
+            dest_path.write_bytes(content)
 
+
+@click.command()
+def sync_tests():
+    print("Syncing tests")
+    sync_avro()
+    sync_fastavro()
 
 
 if __name__ == "__main__":

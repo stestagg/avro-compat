@@ -80,6 +80,8 @@ class DatumReader:
             return reader.binary_read(decoder.cavro_reader)
         except EOFError:
             raise avro_compat.avro.errors.InvalidAvroBinaryEncoding('Not enough data to read value.')
+        except cavro.CannotPromoteError as e:
+            raise avro_compat.avro.errors.SchemaResolutionException(str(e), writers_schema, readers_schema) from e
 
 
 class DatumWriter:

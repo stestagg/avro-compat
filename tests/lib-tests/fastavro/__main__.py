@@ -1,0 +1,1 @@
+/Users/sstagg/src/avro-compat/src/avro_compat/fastavro/__main__.py
