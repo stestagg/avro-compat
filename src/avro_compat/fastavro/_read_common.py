@@ -10,7 +10,7 @@ HEADER_SCHEMA = {
         },
         {"name": "meta", "type": {"type": "map", "values": "bytes"}},
         {"name": "sync", "type": {"type": "fixed", "name": "sync", "size": 16}},
-    ]
+    ],
 }
 
 SchemaResolutionError = cavro.CannotPromoteError

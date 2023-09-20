@@ -11,14 +11,13 @@ LONG_SCHEMA = cavro.Schema('"long"', options=OPTIONS)
 
 
 class BinaryEncoder:
-
     def __init__(self, writer: IO[bytes]) -> None:
         self.writer = writer
 
     @property
     def cavro_writer(self):
         return cavro.FileObjWriter(self.writer)
-    
+
     def write_long(self, value: int) -> None:
         LONG_SCHEMA.binary_write(self.cavro_writer, value)
 
@@ -30,7 +29,7 @@ class BinaryDecoder:
     @property
     def cavro_reader(self):
         return cavro.FileReader(self.reader)
-    
+
     def skip_long(self):
         LONG_SCHEMA.binary_read(self.cavro_reader)
 
@@ -50,7 +49,7 @@ class DatumReader:
     @property
     def _readers_schema(self):
         return self.readers_schema
-    
+
     def _reader_for_writer(self, reader, writer):
         if reader is writer:
             return reader
@@ -74,12 +73,12 @@ class DatumReader:
             writers_schema = cavro.Schema.wrap_type(writers_schema, OPTIONS)
         if isinstance(readers_schema, cavro.AvroType):
             readers_schema = cavro.Schema.wrap_type(readers_schema, OPTIONS)
-            
+
         reader = self._reader_for_writer(readers_schema, writers_schema)
         try:
             return reader.binary_read(decoder.cavro_reader)
         except EOFError:
-            raise avro_compat.avro.errors.InvalidAvroBinaryEncoding('Not enough data to read value.')
+            raise avro_compat.avro.errors.InvalidAvroBinaryEncoding("Not enough data to read value.")
         except cavro.CannotPromoteError as e:
             raise avro_compat.avro.errors.SchemaResolutionException(str(e), writers_schema, readers_schema) from e
 
@@ -120,6 +119,7 @@ def validate(expected_schema: avro_compat.avro.schema.Schema, datum: object, rai
             )
         return False
     return True
+
 
 def Validate(*a, **kw):
     return validate(*a, **kw)

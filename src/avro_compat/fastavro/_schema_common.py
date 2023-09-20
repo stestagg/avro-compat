@@ -1,4 +1,4 @@
-import cavro 
+import cavro
 
 PRIMITIVES = tuple(cavro.PRIMITIVE_TYPES.keys())
 

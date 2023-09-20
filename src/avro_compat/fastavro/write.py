@@ -9,18 +9,34 @@ from .validation import ValidationError
 from fastavro._write_common import _is_appendable
 from fastavro.json_write import AvroJSONEncoder, json_writer as fa_json_writer
 
+
 class HybridError(TypeError, ValueError, ValidationError):
     pass
 
 
 _ERROR_MAP = {
-    re.compile(r"required field '(.*?)' missing"): (ValueError, r"Field \1 is specified in the schema but missing from the record (no value and no default)"),
-    re.compile(r'Invalid value (.*?) for type string at (.*)'): (TypeError, r'must be string on field \2'),
-    re.compile(r"Invalid value '\.\.\.' for type (.*?) at (.*)"): (HybridError, r'record contains more fields than the schema specifies: \2'),
-    re.compile(r"Invalid value '<missing>' for type (.*?) at (.*)"): (HybridError, r'\2 is specified in the schema but missing from the record'),
-    re.compile(r'Invalid value (.*?) for type (.*?) at (.*)'): (HybridError, r'Invalid value \1 for type \2 on field \3'),
-    re.compile(r'Invalid value (.*?) for type (.*?)'): (HybridError, r'Invalid value \1 for type \2'),
-    re.compile(r'Field (\w+) is required for record (.*)'): (HybridError, r'\1 is specified in the schema but missing from the record \2'),
+    re.compile(r"required field '(.*?)' missing"): (
+        ValueError,
+        r"Field \1 is specified in the schema but missing from the record (no value and no default)",
+    ),
+    re.compile(r"Invalid value (.*?) for type string at (.*)"): (TypeError, r"must be string on field \2"),
+    re.compile(r"Invalid value '\.\.\.' for type (.*?) at (.*)"): (
+        HybridError,
+        r"record contains more fields than the schema specifies: \2",
+    ),
+    re.compile(r"Invalid value '<missing>' for type (.*?) at (.*)"): (
+        HybridError,
+        r"\2 is specified in the schema but missing from the record",
+    ),
+    re.compile(r"Invalid value (.*?) for type (.*?) at (.*)"): (
+        HybridError,
+        r"Invalid value \1 for type \2 on field \3",
+    ),
+    re.compile(r"Invalid value (.*?) for type (.*?)"): (HybridError, r"Invalid value \1 for type \2"),
+    re.compile(r"Field (\w+) is required for record (.*)"): (
+        HybridError,
+        r"\1 is specified in the schema but missing from the record \2",
+    ),
 }
 
 _ORIG_LOGICAL_WRITERS = LOGICAL_WRITERS.copy()
@@ -76,7 +92,7 @@ class Writer:
             fo.seek(0, 2)
         else:
             schema = schema_._get_cschema(schema_.parse_schema(schema, _options=schema_options))
-        
+
         try:
             self._container = cavro.ContainerWriter(
                 fo,
@@ -164,7 +180,7 @@ def schemaless_writer(fo, schema, record, **kwargs):
 def json_writer(fo, schema, records, *, validator=False, encoder=AvroJSONEncoder, **kwargs):
     if encoder is not AvroJSONEncoder:
         return fa_json_writer(fo, schema, records, validator=validator, encoder=encoder, **kwargs)
-    kwargs.setdefault('coerce_values_to_str', True)
+    kwargs.setdefault("coerce_values_to_str", True)
     schema = schema_.parse_schema(schema, **kwargs)
     schema = schema_._get_cschema(schema)
     for record in records:

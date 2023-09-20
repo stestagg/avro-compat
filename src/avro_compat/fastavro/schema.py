@@ -19,7 +19,7 @@ epoch = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
 
 class LocalTimestampMicros(cavro.CustomLogicalType):
     logical_name = "local-timestamp-micros"
-    underlying_types = (cavro.LongType, )
+    underlying_types = (cavro.LongType,)
 
     @classmethod
     def _for_type(cls, underlying_type):
@@ -30,14 +30,14 @@ class LocalTimestampMicros(cavro.CustomLogicalType):
             return value
         delta = value.replace(tzinfo=datetime.timezone.utc) - epoch
         return int(delta.total_seconds() * 1_000_000)
-    
+
     def custom_decode_value(self, value):
         return (epoch + datetime.timedelta(microseconds=value)).replace(tzinfo=None)
-    
+
 
 class LocalTimestampMillis(cavro.CustomLogicalType):
     logical_name = "local-timestamp-millis"
-    underlying_types = (cavro.LongType, )
+    underlying_types = (cavro.LongType,)
 
     @classmethod
     def _for_type(cls, underlying_type):
@@ -48,17 +48,16 @@ class LocalTimestampMillis(cavro.CustomLogicalType):
             return value
         delta = value.replace(tzinfo=datetime.timezone.utc) - epoch
         return int(delta.total_seconds() * 1_000)
-    
+
     def custom_decode_value(self, value):
         return (epoch + datetime.timedelta(microseconds=(value * 1_000))).replace(tzinfo=None)
-        
+
 
 class ReadPrepareType(cavro.CustomLogicalType):
-    
     def __init__(self, avro_type, logical_name, preparer, reader):
         avro_type_cls = cavro.TYPES_BY_NAME[avro_type]
         self.logical_name = logical_name
-        self.underlying_types = (avro_type_cls, )
+        self.underlying_types = (avro_type_cls,)
         self._preparer = preparer
         self._reader = reader
         self._schema = None
@@ -74,7 +73,7 @@ class ReadPrepareType(cavro.CustomLogicalType):
         if not isinstance(other, ReadPrepareType):
             return False
         return self.equality_key == other.equality_key
-    
+
     def __repr__(self):
         return f"<Logical {self.logical_name} for {self.underlying_types[0].type_name}>"
 
@@ -91,7 +90,6 @@ class ReadPrepareType(cavro.CustomLogicalType):
         return self._reader(value, self._schema, self._schema)
 
 
-
 _OPTIONS = cavro.Options(
     allow_error_type=True,
     raise_on_invalid_logical=True,
@@ -99,7 +97,7 @@ _OPTIONS = cavro.Options(
     allow_aliases_to_be_string=True,
     container_fill_blocks=True,
     enforce_namespace_name_rules=False,
-    missing_values_can_be_null=True, # Conflict
+    missing_values_can_be_null=True,  # Conflict
     return_uuid_object=False,
     defer_schema_promotion_errors=True,
     date_type_accepts_string=True,
@@ -115,7 +113,9 @@ _OPTIONS = cavro.Options(
     LocalTimestampMillis,
 )
 
-def _get_options(base=_OPTIONS,
+
+def _get_options(
+    base=_OPTIONS,
     return_record_name=None,
     return_record_name_override=None,
     handle_unicode_errors=None,
@@ -126,8 +126,8 @@ def _get_options(base=_OPTIONS,
     disable_tuple_notation=False,
     _ignore_default_error=False,
     write_union_type=None,
-    **kwargs
-    ):
+    **kwargs,
+):
     if base is None:
         base = _OPTIONS
     if kwargs:
@@ -153,38 +153,38 @@ def _get_options(base=_OPTIONS,
     if return_record_name is not None:
         if return_record_name:
             if return_record_name_override:
-                updates['union_decodes_to'] = cavro.UnionDecodeOption.TYPE_TUPLE_IF_RECORD_AMBIGUOUS
+                updates["union_decodes_to"] = cavro.UnionDecodeOption.TYPE_TUPLE_IF_RECORD_AMBIGUOUS
             else:
-                updates['union_decodes_to'] = cavro.UnionDecodeOption.TYPE_TUPLE_IF_RECORD
+                updates["union_decodes_to"] = cavro.UnionDecodeOption.TYPE_TUPLE_IF_RECORD
         else:
-            updates['union_decodes_to'] = cavro.UnionDecodeOption.RAW_VALUES
-        
+            updates["union_decodes_to"] = cavro.UnionDecodeOption.RAW_VALUES
+
     if return_named_type is not None:
-        updates.setdefault('union_decodes_to', cavro.UnionDecodeOption.RAW_VALUES)
+        updates.setdefault("union_decodes_to", cavro.UnionDecodeOption.RAW_VALUES)
         if return_named_type:
             if return_named_type_override:
-                updates['union_read_val'] = cavro.UnionDecodeOption.TYPE_TUPLE_IF_AMBIGUOUS
+                updates["union_read_val"] = cavro.UnionDecodeOption.TYPE_TUPLE_IF_AMBIGUOUS
             else:
-                updates['union_read_val'] = cavro.UnionDecodeOption.TYPE_TUPLE_ALWAYS
+                updates["union_read_val"] = cavro.UnionDecodeOption.TYPE_TUPLE_ALWAYS
     if strict is not None:
         # Strict mode disallows extra fields or defaults
-        updates['record_allow_extra_fields'] = not strict
-        updates['record_encode_use_defaults'] = not strict
+        updates["record_allow_extra_fields"] = not strict
+        updates["record_encode_use_defaults"] = not strict
     if strict_allow_default:
         # Strict mode disallows extra fields but allows defaults
-        updates['record_allow_extra_fields'] = False
-        updates['record_encode_use_defaults'] = True
+        updates["record_allow_extra_fields"] = False
+        updates["record_encode_use_defaults"] = True
     if disable_tuple_notation:
-        updates['allow_tuple_notation'] = False
+        updates["allow_tuple_notation"] = False
     if _ignore_default_error:
-        updates['allow_union_default_any_member'] = True
-        updates['allow_invalid_default_values'] = True
+        updates["allow_union_default_any_member"] = True
+        updates["allow_invalid_default_values"] = True
     if write_union_type is not None:
-        updates['union_json_encodes_type_name'] = write_union_type
+        updates["union_json_encodes_type_name"] = write_union_type
     if handle_unicode_errors is not None:
-        updates['unicode_errors'] = handle_unicode_errors
+        updates["unicode_errors"] = handle_unicode_errors
     return base.replace(**updates)
-    
+
 
 _ERROR_MAP = {
     re.compile(r"Scale must be a positive integer"): "decimal scale must be a positive integer",
@@ -199,7 +199,9 @@ _ERROR_MAP = {
     ): "Every symbol must match the regular expression [A-Za-z_][A-Za-z0-9_]*",
     re.compile(r"Enum symbols must be unique"): "All symbols in an enum must be unique",
     re.compile(r"Default value .*? not in enum symbols"): "Default value for enum must be in symbols list",
-    re.compile(r"Default value (.*?)(:? for field .*?)? is not valid for union"): r"Default value <\1> must match first schema in union",
+    re.compile(
+        r"Default value (.*?)(:? for field .*?)? is not valid for union"
+    ): r"Default value <\1> must match first schema in union",
     re.compile(r"Default value (.*?) is not valid for field:"): r"Default value <\1> must match schema type",
 }
 
@@ -237,23 +239,23 @@ class SchemaAnnotation:
         if name in {"__fastavro_parsed"}:
             return True
         return super().__contains__(name)
-    
+
     def __eq__(self, other):
         if other is None:
             return False
         if not isinstance(other, SchemaAnnotation):
             other = parse_schema(other, _options=self.__schema.options)
         return self.__schema.canonical_form == _get_cschema(other).canonical_form
-    
+
     def pop(self, name):
         if name in {"__fastavro_parsed"}:
             return
         return super().pop(name)
-    
+
     def __copy__(self):
         copy_val = copy.copy(self.__orig)
         return type(self)(copy_val, self.__schema)
-    
+
     def __deepcopy__(self, memo):
         copy_val = copy.deepcopy(self.__orig, memo)
         return type(self)(copy_val, self.__schema)
@@ -344,7 +346,9 @@ def parse_schema(
     options = _get_options(_options, **kwargs)
 
     if isinstance(schema, SchemaAnnotation):
-        if not _force and _get_cschema(schema).options.equals(options, ignore=['invalid_value_includes_record_name', 'externally_defined_types']):
+        if not _force and _get_cschema(schema).options.equals(
+            options, ignore=["invalid_value_includes_record_name", "externally_defined_types"]
+        ):
             return schema
         schema = _unwrap_schema(schema)
 
@@ -353,7 +357,9 @@ def parse_schema(
         named_types = {}
         for k, v in named_schemas.items():
             if _unknown_named_types:
-                v = parse_schema(v, named_schemas=None, _write_hint=_write_hint, _unknown_named_types=False, _options=options)
+                v = parse_schema(
+                    v, named_schemas=None, _write_hint=_write_hint, _unknown_named_types=False, _options=options
+                )
             named_schemas[k] = v
             named_types[k] = _get_cschema(v).type
         options = options.with_external_types(named_types)
@@ -408,7 +414,7 @@ def to_parsing_canonical_form(schema):
 
 
 def fingerprint(parsing_canonical_form, algorithm):
-    #algorithm = FINGERPRINT_ALGORITHMS[algorithm]
+    # algorithm = FINGERPRINT_ALGORITHMS[algorithm]
     try:
         return Fingerprint(parsing_canonical_form, algorithm, _hex=True)
     except ValueError as e:

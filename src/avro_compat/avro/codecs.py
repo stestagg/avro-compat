@@ -1,13 +1,12 @@
-
 from cavro import Codec, NullCodec, SnappyCodec, DeflateCodec
 from .errors import UnsupportedCodec
 from typing import Type
 
 
 KNOWN_CODECS = {
-    'null': NullCodec,
-    'snappy': SnappyCodec,
-    'deflate': DeflateCodec,
+    "null": NullCodec,
+    "snappy": SnappyCodec,
+    "deflate": DeflateCodec,
 }
 
 

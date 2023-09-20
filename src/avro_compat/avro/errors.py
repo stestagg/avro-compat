@@ -1,6 +1,7 @@
-import cavro 
+import cavro
 
 AvroException = cavro.CavroException
+
 
 class InvalidAvroBinaryEncoding(AvroException):
     pass

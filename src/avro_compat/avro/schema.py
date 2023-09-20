@@ -17,7 +17,7 @@ try:
 except ImportError:
     from avro.schema import PRIMITIVE_TYPES
 
-if avro_version >= _version.parse('1.11.0'):
+if avro_version >= _version.parse("1.11.0"):
     from avro.name import Names
 else:
     from avro.schema import Names
@@ -26,21 +26,17 @@ else:
 def instantiate_type(cls, *args, validate_names=True, **kwargs):
     if isinstance(cls.TYPE, tuple):
         raise NotImplementedError("Multiple types not supported")
-    
+
     if args:
         init_sig = signature(getattr(avro.schema, cls.__name__).__init__)
         kwargs = init_sig.bind(None, *args, **kwargs).arguments
 
-    source = {
-        'type': cls.TYPE.type_name,
-        **kwargs
-    }
+    source = {"type": cls.TYPE.type_name, **kwargs}
     schema = parse(source, validate_names=validate_names)
     return schema.type
 
 
 class AvroTypeMeta(type):
-
     def __new__(cls, name, bases, classdict):
         result = type.__new__(cls, name, bases, dict(classdict))
         result.__new__ = instantiate_type
@@ -51,8 +47,8 @@ class AvroTypeMeta(type):
             return False
         if not isinstance(inst.type, cls.TYPE):
             return False
-        if logical_type := getattr(cls, 'LOGICAL_TYPE', None):
-            if not any (isinstance(a, logical_type) for a in inst.type.value_adapters):
+        if logical_type := getattr(cls, "LOGICAL_TYPE", None):
+            if not any(isinstance(a, logical_type) for a in inst.type.value_adapters):
                 return False
         return True
 
@@ -135,19 +131,19 @@ class Schema(cavro.Schema):
 
     def __str__(self):
         return self.schema_str
-    
+
     def __eq__(self, other):
         if isinstance(other, Schema):
             return self.canonical_form == other.canonical_form
         return False
-    
+
     def __hash__(self) -> int:
         return hash(self.fingerprint())
 
     @property
     def logicalType(self):
         for adapter in self.type.value_adapters:
-            if hasattr(adapter, 'logical_name'):
+            if hasattr(adapter, "logical_name"):
                 return adapter.logical_name
         raise AttributeError("Logical type not found")
 
@@ -158,14 +154,14 @@ class Schema(cavro.Schema):
             except AttributeError:
                 pass
         return getattr(self, prop)
-    
+
     def to_json(self):
         return self.schema
-    
+
     @property
     def other_props(self):
         return self.metadata
-    
+
     @property
     def schemas(self):
         if isinstance(self.type, cavro.UnionType):
@@ -185,7 +181,7 @@ class Name:
         if name_attr is None:
             self._type = _NullNameType
         else:
-            self._type = cavro.NamedType(schema, {'name': name_attr, 'namespace': space_attr}, default_space)
+            self._type = cavro.NamedType(schema, {"name": name_attr, "namespace": space_attr}, default_space)
 
     def __eq__(self, other):
         if not isinstance(other, Name):
@@ -199,20 +195,32 @@ class Name:
     @property
     def name(self):
         return self._type.name
-    
+
     @property
     def space(self):
         return self._type.effective_namespace
-        
 
-def parse(json_string: str, validate_enum_symbols: bool = True, validate_names: bool = True, return_record_name=False, return_record_name_override=False, handle_unicode_errors='strict', return_named_type=False, return_named_type_override=False) -> Schema:
+
+def parse(
+    json_string: str,
+    validate_enum_symbols: bool = True,
+    validate_names: bool = True,
+    return_record_name=False,
+    return_record_name_override=False,
+    handle_unicode_errors="strict",
+    return_named_type=False,
+    return_named_type_override=False,
+) -> Schema:
     try:
-        return Schema(json_string, options=OPTIONS.replace(
-            enum_symbols_must_be_unique=validate_enum_symbols,
-            enforce_enum_symbol_name_rules=validate_enum_symbols,
-            enforce_type_name_rules=validate_names,
-            enforce_namespace_name_rules=validate_names,
-        ))
+        return Schema(
+            json_string,
+            options=OPTIONS.replace(
+                enum_symbols_must_be_unique=validate_enum_symbols,
+                enforce_enum_symbol_name_rules=validate_enum_symbols,
+                enforce_type_name_rules=validate_names,
+                enforce_namespace_name_rules=validate_names,
+            ),
+        )
     except (ValueError, TypeError, KeyError) as e:
         raise SchemaParseException(str(e)) from e
 
@@ -220,6 +228,7 @@ def parse(json_string: str, validate_enum_symbols: bool = True, validate_names: 
 def Parse(*a, **kw):
     warnings.warn("`Parse` is deprecated, use `parse` instead", DeprecationWarning)
     return parse(*a, **kw)
+
 
 def from_path(path, **kwargs) -> Schema:
     path = Path(path)
