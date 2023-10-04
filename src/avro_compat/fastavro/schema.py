@@ -343,12 +343,13 @@ def parse_schema(
     _unknown_named_types=True,
     **kwargs,
 ):
-    options = _get_options(_options, **kwargs)
+    options = _get_options(_options, **kwargs) if kwargs else _options
 
     if isinstance(schema, SchemaAnnotation):
-        if not _force and _get_cschema(schema).options.equals(
+        c_schema = _get_cschema(schema)
+        if not _force and (c_schema.options is options or c_schema.options.equals(
             options, ignore=["invalid_value_includes_record_name", "externally_defined_types"]
-        ):
+        )):
             return schema
         schema = _unwrap_schema(schema)
 
