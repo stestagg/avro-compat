@@ -125,6 +125,7 @@ class Schema(cavro.Schema):
             super().__init__(source, *args, **kwargs)
         except json.decoder.JSONDecodeError as e:
             raise avro_compat.avro.errors.SchemaParseException(f"Error parsing JSON: {source}, error = {e}") from e
+        self._hash = None
 
     def __getattr__(self, name):
         return getattr(self.type, name)
@@ -138,7 +139,9 @@ class Schema(cavro.Schema):
         return False
 
     def __hash__(self) -> int:
-        return hash(self.fingerprint())
+        if self._hash is None:
+            self._hash = hash(self.fingerprint())
+        return self._hash
 
     @property
     def logicalType(self):
