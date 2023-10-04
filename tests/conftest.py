@@ -29,6 +29,9 @@ TESTS_TO_XFAIL = [
     # we return the entire union, so this is hard to replicate
     SkipTest('fastavro', 'test_validation.py', 'test_validate_string_in_int_raises'),
     SkipTest('fastavro', 'test_validation.py', 'test_validate_int_in_string_null_raises'),
+
+    # Older versions of avro-python3 expect a null namespace to be preserved in the name
+    SkipTest('avro', 'test_schema.py', 'testFullname'),
 ]
 
 

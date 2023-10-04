@@ -168,7 +168,7 @@ def writer(
 def schemaless_writer(fo, schema, record, **kwargs):
     schema = schema_.parse_schema(schema, **kwargs)
     schema = schema_._get_cschema(schema)
-    writer = cavro.FileObjWriter(fo)
+    writer = cavro.FileWriter(fo)
     try:
         schema.binary_write(writer, record)
     except (decimal.InvalidOperation, cavro.ExponentTooLarge) as e:

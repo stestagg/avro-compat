@@ -79,7 +79,7 @@ class ReadPrepareType(cavro.CustomLogicalType):
 
     def _for_type(self, underlying):
         inst = self.copy()
-        schema = cavro.Schema.wrap_type(underlying, options=underlying.options)
+        schema = cavro.Schema._wrap_type(underlying, options=underlying.options)
         inst._schema = _wrap_type(underlying.get_schema(set()), schema)
         return inst
 
@@ -276,7 +276,7 @@ def _wrap_type(orig_value, schema):
     ty = _get_type(type(value))
     if isinstance(value, list):
         subtypes = schema.type.union_types
-        value = [_wrap_type(v, schema.wrap_type(subtype)) for subtype, v in zip(subtypes, value)]
+        value = [_wrap_type(v, schema._wrap_type(subtype)) for subtype, v in zip(subtypes, value)]
     return ty(value, schema, orig=orig_value)
 
 
@@ -373,7 +373,7 @@ def parse_schema(
 
     if named_schemas is not None:
         for key, value in cavro_schema.named_types.items():
-            named_schemas[key] = _wrap_type(value.get_schema(), cavro_schema.wrap_type(value))
+            named_schemas[key] = _wrap_type(value.get_schema(), cavro_schema._wrap_type(value))
 
     return _wrap_type(schema, cavro_schema)
 

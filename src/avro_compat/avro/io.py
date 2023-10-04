@@ -16,7 +16,7 @@ class BinaryEncoder:
 
     @property
     def cavro_writer(self):
-        return cavro.FileObjWriter(self.writer)
+        return cavro.FileWriter(self.writer)
 
     def write_long(self, value: int) -> None:
         LONG_SCHEMA.binary_write(self.cavro_writer, value)
@@ -70,9 +70,9 @@ class DatumReader:
 
     def read_data(self, writers_schema: cavro.Schema, readers_schema: cavro.Schema, decoder: "BinaryDecoder") -> object:
         if isinstance(writers_schema, cavro.AvroType):
-            writers_schema = cavro.Schema.wrap_type(writers_schema, OPTIONS)
+            writers_schema = cavro.Schema._wrap_type(writers_schema, OPTIONS)
         if isinstance(readers_schema, cavro.AvroType):
-            readers_schema = cavro.Schema.wrap_type(readers_schema, OPTIONS)
+            readers_schema = cavro.Schema._wrap_type(readers_schema, OPTIONS)
 
         reader = self._reader_for_writer(readers_schema, writers_schema)
         try:
@@ -98,7 +98,7 @@ class DatumWriter:
 
     def write_data(self, writers_schema: cavro.Schema, datum: object, encoder: BinaryEncoder) -> None:
         if isinstance(writers_schema, cavro.AvroType):
-            writers_schema = cavro.Schema.wrap_type(writers_schema, OPTIONS)
+            writers_schema = cavro.Schema._wrap_type(writers_schema, OPTIONS)
         try:
             writers_schema.binary_write(encoder.cavro_writer, datum)
         except cavro.ExponentTooLarge as e:

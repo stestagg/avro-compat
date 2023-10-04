@@ -181,7 +181,7 @@ class Name:
         if name_attr is None:
             self._type = _NullNameType
         else:
-            self._type = cavro.NamedType(schema, {"name": name_attr, "namespace": space_attr}, default_space)
+            self._type = cavro._NamedType(schema, {"name": name_attr, "namespace": space_attr}, default_space)
 
     def __eq__(self, other):
         if not isinstance(other, Name):
