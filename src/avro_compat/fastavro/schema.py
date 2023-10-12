@@ -236,11 +236,6 @@ class SchemaAnnotation:
         if not isinstance(self, str):
             super().__init__(value)
 
-    @functools.lru_cache(maxsize=32)
-    def __reader_for_writer(self, writer_schema):
-        return self.__schema.reader_for_writer(writer_schema)
-
-
     def __contains__(self, name):
         if name in {"__fastavro_parsed"}:
             return True
@@ -267,8 +262,9 @@ class SchemaAnnotation:
         return type(self)(copy_val, self.__schema)
 
 
-def reader_for_writer(reader, writer):
-    return reader._SchemaAnnotation__schema.reader_for_writer(writer)
+@functools.lru_cache(maxsize=32)
+def _reader_for_writer(reader, writer):
+    return reader.reader_for_writer(writer)
 
 
 _annotated_types = {}
