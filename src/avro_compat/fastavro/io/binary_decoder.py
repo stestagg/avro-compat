@@ -1,6 +1,7 @@
 import cavro
 from functools import partial
 
+
 SCHEMAS = {
     "null": cavro.Schema("null", parse_json=False),
     "boolean": cavro.Schema("boolean", parse_json=False),

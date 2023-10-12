@@ -1,4 +1,5 @@
 import datetime
+import functools
 import cavro
 import copy
 import json
@@ -115,7 +116,7 @@ _OPTIONS = cavro.Options(
 
 
 def _get_options(
-    base=_OPTIONS,
+    base=None,
     return_record_name=None,
     return_record_name_override=None,
     handle_unicode_errors=None,
@@ -235,6 +236,11 @@ class SchemaAnnotation:
         if not isinstance(self, str):
             super().__init__(value)
 
+    @functools.lru_cache(maxsize=32)
+    def __reader_for_writer(self, writer_schema):
+        return self.__schema.reader_for_writer(writer_schema)
+
+
     def __contains__(self, name):
         if name in {"__fastavro_parsed"}:
             return True
@@ -245,7 +251,7 @@ class SchemaAnnotation:
             return False
         if not isinstance(other, SchemaAnnotation):
             other = parse_schema(other, _options=self.__schema.options)
-        return self.__schema.canonical_form == _get_cschema(other).canonical_form
+        return _get_cschema(self).canonical_form == _get_cschema(other).canonical_form
 
     def pop(self, name):
         if name in {"__fastavro_parsed"}:
@@ -259,6 +265,10 @@ class SchemaAnnotation:
     def __deepcopy__(self, memo):
         copy_val = copy.deepcopy(self.__orig, memo)
         return type(self)(copy_val, self.__schema)
+
+
+def reader_for_writer(reader, writer):
+    return reader._SchemaAnnotation__schema.reader_for_writer(writer)
 
 
 _annotated_types = {}
@@ -339,17 +349,23 @@ def parse_schema(
     expand=False,
     _write_hint=True,
     _force=False,
-    _options=_OPTIONS,
+    _options=None,
     _unknown_named_types=True,
     **kwargs,
 ):
+    if _options is None:
+        _options = _OPTIONS
+
     options = _get_options(_options, **kwargs) if kwargs else _options
 
     if isinstance(schema, SchemaAnnotation):
         c_schema = _get_cschema(schema)
-        if not _force and (c_schema.options is options or c_schema.options.equals(
-            options, ignore=["invalid_value_includes_record_name", "externally_defined_types"]
-        )):
+        if not _force and (
+            c_schema.options is options
+            or c_schema.options.equals(
+                options, ignore=["invalid_value_includes_record_name", "externally_defined_types"]
+            )
+        ):
             return schema
         schema = _unwrap_schema(schema)
 

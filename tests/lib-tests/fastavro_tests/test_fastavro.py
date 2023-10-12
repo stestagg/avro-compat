@@ -91,6 +91,7 @@ def test_file(filename):
     new_file_bytes = new_file.getvalue()
 
     new_file = NoSeekBytesIO(new_file_bytes)
+    
     new_reader = fastavro.reader(new_file)
     assert hasattr(new_reader, "writer_schema"), "schema wasn't written"
     assert new_reader.writer_schema == remove_legacy_fields(

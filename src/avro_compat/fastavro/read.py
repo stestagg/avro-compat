@@ -110,8 +110,8 @@ def schemaless_reader(fo, writer_schema, reader_schema=None, **kwargs):
     writer_schema = schema_._get_cschema(schema_.parse_schema(writer_schema, **kwargs))
     schema = writer_schema
     if reader_schema is not None:
-        reader_schema = schema_._get_cschema(schema_.parse_schema(reader_schema, **kwargs))
-        schema = reader_schema.reader_for_writer(writer_schema)
+        reader_schema = schema_.parse_schema(reader_schema, **kwargs)
+        schema = schema_.reader_for_writer(reader_schema, writer_schema)
     reader = cavro.FileReader(fo)
     return schema.binary_read(reader)
 
@@ -119,12 +119,14 @@ def schemaless_reader(fo, writer_schema, reader_schema=None, **kwargs):
 def json_reader(fo, schema, reader_schema=None, *, decoder=AvroJSONDecoder):
     if decoder is not AvroJSONDecoder:
         return fa_json_reader(fo, schema, reader_schema, decoder=decoder)
+    
+    writer_schema = schema_.parse_schema(schema)
     if reader_schema is None:
-        reader_schema = schema
-    reader_schema = schema_._get_cschema(schema_.parse_schema(reader_schema))
-    writer_schema = schema_._get_cschema(schema_.parse_schema(schema))
-
-    cschema = reader_schema.reader_for_writer(writer_schema)
+        reader_schema = writer_schema
+        cschema = schema_._get_cschema(writer_schema)
+    else:
+        reader_schema = schema_.parse_schema(reader_schema)
+        cschema = schema_.reader_for_writer(reader_schema, schema_._get_cschema(writer_schema))
 
     for line in fo:
         if not line.strip():
